@@ -14,11 +14,21 @@ func main()  {
 	//})
 
 //-----version-2 concurrent
-	e := engine.ConcurrentEngine{ // config spider engine 配置爬虫引擎
-		Scheduler: &scheduler.SimpleScheduler{},
-		WorkerCount: 50,
+//	e := engine.ConcurrentEngine{ // config spider engine 配置爬虫引擎
+//		Scheduler: &scheduler.SimpleScheduler{},
+//		WorkerCount: 50,
+//	}
+//	e.Run(engine.Request{ // config spider target information 配置爬虫目标信息
+//		Url:"http://www.zhenai.com/zhenghun",
+//		ParseFunc:parser.ParseCityList,
+//	})
+
+//-----version-3 queue-concurrent
+	e := engine.ConcurrentEngine{
+		Scheduler:&scheduler.QueuedScheduler{},//这里调用并发调度器
+		WorkerCount:50,
 	}
-	e.Run(engine.Request{ // config spider target information 配置爬虫目标信息
+	e.Run(engine.Request{
 		Url:"http://www.zhenai.com/zhenghun",
 		ParseFunc:parser.ParseCityList,
 	})

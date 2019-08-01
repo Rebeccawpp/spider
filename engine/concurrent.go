@@ -11,16 +11,20 @@ type ConcurrentEngine struct {
 type Scheduler interface {
 	Submit(request Request) // 提交任务
 	ConfigMasterWorkerChan(chan Request) // 配置初始请求任务
+	WorkerReady(w chan Request)
+	Run()
 }
 
 func (e *ConcurrentEngine) Run (seeds ...Request)  {
-	in := make(chan Request)  // scheduler的输入
+	//in := make(chan Request)  // scheduler的输入
 	out := make(chan ParseResult) // worker的输出
-	e.Scheduler.ConfigMasterWorkerChan(in) // 把初始请求提交给scheduler
+	//e.Scheduler.ConfigMasterWorkerChan(in) // 把初始请求提交给scheduler
+	e.Scheduler.Run()
 
 	// create goRoutine
 	for i:=0; i<e.WorkerCount; i++ {
-		createWorker(in, out)
+		//createWorker(in, out)
+		createWorker(out, e.Scheduler)
 	}
 	// engine commit the request to Scheduler： engine把请求任务提交给scheduler
 	for _, request := range seeds {
@@ -42,9 +46,24 @@ func (e *ConcurrentEngine) Run (seeds ...Request)  {
 }
 
 // create任务，调用worker，分发goroutine
-func createWorker(in chan Request, out chan ParseResult)  {
+//func createWorker(in chan Request, out chan ParseResult)  {
+//	go func() {
+//		for {
+//			request := <-in
+//			result, err := worker(request)
+//			if err != nil {
+//				continue
+//			}
+//			out <- result
+//		}
+//	}()
+//}
+func createWorker(out chan ParseResult, s Scheduler)  {
+	// 为每个worker创建一个channel
+	in := make(chan Request)
 	go func() {
 		for {
+			s.WorkerReady(in) // 告诉调度器任务空闲
 			request := <-in
 			result, err := worker(request)
 			if err != nil {
